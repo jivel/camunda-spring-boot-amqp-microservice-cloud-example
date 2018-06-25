@@ -1,9 +1,9 @@
 package com.camunda.demo.springboot;
 
+import static org.assertj.core.api.Assertions.fail;
+import static org.camunda.bpm.engine.test.assertions.bpmn.BpmnAwareAssertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.jsonPath;
@@ -19,7 +19,6 @@ import org.camunda.bpm.engine.ProcessEngine;
 import org.camunda.bpm.engine.test.Deployment;
 import org.camunda.bpm.engine.test.ProcessEngineRule;
 import org.camunda.bpm.extension.process_test_coverage.junit.rules.TestCoverageProcessEngineRuleBuilder;
-import static org.camunda.bpm.engine.test.assertions.ProcessEngineTests.*;
 import org.camunda.bpm.scenario.ProcessScenario;
 import org.camunda.bpm.scenario.Scenario;
 import org.camunda.bpm.scenario.run.ProcessRunner.ExecutableRunner.StartingByStarter;
@@ -28,11 +27,8 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.amqp.core.Message;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
@@ -62,8 +58,8 @@ public class OrderProcessTest {
   @Mock
   private ProcessScenario orderProcess;
   
-  @Autowired
-  private RabbitTemplate rabbitTemplate;
+//  @Autowired
+//  private RabbitTemplate rabbitTemplate;
 
   @Autowired
   private RestTemplate restTemplate;
@@ -138,10 +134,10 @@ public class OrderProcessTest {
     assertThat(scenario.instance(orderProcess)).variables().containsEntry(ProcessConstants.VAR_NAME_shipmentId, "0815");
 
     {
-      ArgumentCaptor<Message> argument = ArgumentCaptor.forClass(Message.class);
-      verify(rabbitTemplate, times(1)).convertAndSend(eq("shipping"), eq("createShipment"), argument.capture());
+//      ArgumentCaptor<Message> argument = ArgumentCaptor.forClass(Message.class);
+//      verify(rabbitTemplate, times(1)).convertAndSend(eq("shipping"), eq("createShipment"), argument.capture());
       // if the body would be an object, JSON or whatever, you can easily inspect/assert it here in detail
-      assertEquals(orderId, argument.getValue());
+//      assertEquals(orderId, argument.getValue());
     }
 
     verify(orderProcess).hasFinished("EndEvent_OrderShipped");

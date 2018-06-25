@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="1.9.0">
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="1.11.3">
   <bpmn:process id="order" name="Order" isExecutable="true">
     <bpmn:startEvent id="StartEvent_OrderPlaced" name="Order placed">
       <bpmn:outgoing>SequenceFlow_0elkbea</bpmn:outgoing>
@@ -12,39 +12,60 @@
       <bpmn:incoming>SequenceFlow_0elkbea</bpmn:incoming>
       <bpmn:outgoing>SequenceFlow_0njs934</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:sequenceFlow id="SequenceFlow_0njs934" sourceRef="ServiceTask_RetrievePayment" targetRef="ServiceTask_ShipGoods" />
-    <bpmn:serviceTask id="ServiceTask_ShipGoods" name="Ship goods" camunda:delegateExpression="#{sendShipGoodsAmqpAdapter}">
-      <bpmn:incoming>SequenceFlow_0njs934</bpmn:incoming>
-      <bpmn:outgoing>SequenceFlow_12j6m4a</bpmn:outgoing>
-    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="SequenceFlow_0njs934" sourceRef="ServiceTask_RetrievePayment" targetRef="ServiceTask_CallLoanApproval" />
     <bpmn:endEvent id="EndEvent_OrderShipped" name="Order shipped">
       <bpmn:incoming>SequenceFlow_0e88tbe</bpmn:incoming>
     </bpmn:endEvent>
-    <bpmn:sequenceFlow id="SequenceFlow_12j6m4a" sourceRef="ServiceTask_ShipGoods" targetRef="ReceiveTask_WaitForGoodsShipped" />
-    <bpmn:sequenceFlow id="SequenceFlow_13f7q4z" sourceRef="ReceiveTask_WaitForGoodsShipped" targetRef="IntermediateThrowEvent_10qjrod" />
+    <bpmn:sequenceFlow id="SequenceFlow_12j6m4a" sourceRef="ServiceTask_CallLoanApproval" targetRef="ReceiveTask_WaitForGoodsShipped" />
     <bpmn:receiveTask id="ReceiveTask_WaitForGoodsShipped" name="Wait for goods shipped" messageRef="Message_1qt9m10">
       <bpmn:incoming>SequenceFlow_12j6m4a</bpmn:incoming>
-      <bpmn:outgoing>SequenceFlow_13f7q4z</bpmn:outgoing>
     </bpmn:receiveTask>
     <bpmn:sequenceFlow id="SequenceFlow_0e88tbe" sourceRef="IntermediateThrowEvent_10qjrod" targetRef="EndEvent_OrderShipped" />
     <bpmn:intermediateCatchEvent id="IntermediateThrowEvent_10qjrod" name="Wait 5 minutes">
-      <bpmn:incoming>SequenceFlow_13f7q4z</bpmn:incoming>
+      <bpmn:incoming>SequenceFlow_06dz6sd</bpmn:incoming>
       <bpmn:outgoing>SequenceFlow_0e88tbe</bpmn:outgoing>
       <bpmn:timerEventDefinition>
         <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">PT5M</bpmn:timeDuration>
       </bpmn:timerEventDefinition>
     </bpmn:intermediateCatchEvent>
-    <bpmn:textAnnotation id="TextAnnotation_1b1jpxr">    <bpmn:text>REST</bpmn:text>
-</bpmn:textAnnotation>
+    <bpmn:boundaryEvent id="BoundaryEvent_0cqsypf" attachedToRef="ReceiveTask_WaitForGoodsShipped">
+      <bpmn:outgoing>SequenceFlow_0cc51vv</bpmn:outgoing>
+      <bpmn:timerEventDefinition>
+        <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">PT1M</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:boundaryEvent>
+    <bpmn:callActivity id="ServiceTask_CallLoanApproval" name="Call loan Approval" calledElement="loanApproval">
+      <bpmn:extensionElements>
+        <camunda:in variables="all" />
+        <camunda:out variables="all" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>SequenceFlow_0njs934</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlow_12j6m4a</bpmn:outgoing>
+      <bpmn:multiInstanceLoopCharacteristics camunda:collection="users" camunda:elementVariable="user">
+        <bpmn:completionCondition xsi:type="bpmn:tFormalExpression">${nrOfCompletedInstances == nrOfInstances}</bpmn:completionCondition>
+      </bpmn:multiInstanceLoopCharacteristics>
+    </bpmn:callActivity>
+    <bpmn:sequenceFlow id="SequenceFlow_0cc51vv" sourceRef="BoundaryEvent_0cqsypf" targetRef="Task_1rtjmv6" />
+    <bpmn:callActivity id="Task_1rtjmv6" name="Call Activi" calledElement="activityOfTheOrder">
+      <bpmn:incoming>SequenceFlow_0cc51vv</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlow_06dz6sd</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:sequenceFlow id="SequenceFlow_06dz6sd" sourceRef="Task_1rtjmv6" targetRef="IntermediateThrowEvent_10qjrod" />
+    <bpmn:textAnnotation id="TextAnnotation_1b1jpxr">
+      <bpmn:text>REST</bpmn:text>
+    </bpmn:textAnnotation>
     <bpmn:association id="Association_0cosab0" sourceRef="ServiceTask_RetrievePayment" targetRef="TextAnnotation_1b1jpxr" />
-    <bpmn:textAnnotation id="TextAnnotation_0yrfov9">    <bpmn:text>REST</bpmn:text>
-</bpmn:textAnnotation>
+    <bpmn:textAnnotation id="TextAnnotation_0yrfov9">
+      <bpmn:text>REST</bpmn:text>
+    </bpmn:textAnnotation>
     <bpmn:association id="Association_1d8atu6" sourceRef="StartEvent_OrderPlaced" targetRef="TextAnnotation_0yrfov9" />
-    <bpmn:textAnnotation id="TextAnnotation_1ssg80u">    <bpmn:text>AMQP</bpmn:text>
-</bpmn:textAnnotation>
-    <bpmn:association id="Association_0s6v9gu" sourceRef="ServiceTask_ShipGoods" targetRef="TextAnnotation_1ssg80u" />
-    <bpmn:textAnnotation id="TextAnnotation_0vhmt72">    <bpmn:text>AMQP</bpmn:text>
-</bpmn:textAnnotation>
+    <bpmn:textAnnotation id="TextAnnotation_1ssg80u">
+      <bpmn:text>AMQP</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:association id="Association_0s6v9gu" sourceRef="ServiceTask_CallLoanApproval" targetRef="TextAnnotation_1ssg80u" />
+    <bpmn:textAnnotation id="TextAnnotation_0vhmt72">
+      <bpmn:text>AMQP</bpmn:text>
+    </bpmn:textAnnotation>
     <bpmn:association id="Association_0sj35vl" sourceRef="ReceiveTask_WaitForGoodsShipped" targetRef="TextAnnotation_0vhmt72" />
   </bpmn:process>
   <bpmn:message id="Message_1qt9m10" name="Message_GoodsShipped" />
@@ -84,12 +105,9 @@
         <di:waypoint xsi:type="dc:Point" x="365" y="120" />
         <di:waypoint xsi:type="dc:Point" x="430" y="120" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="397.5" y="99" width="0" height="12" />
+          <dc:Bounds x="352.5" y="99" width="90" height="12" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNShape id="ServiceTask_1xckprl_di" bpmnElement="ServiceTask_ShipGoods">
-        <dc:Bounds x="430" y="80" width="100" height="80" />
-      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="TextAnnotation_1ssg80u_di" bpmnElement="TextAnnotation_1ssg80u">
         <dc:Bounds x="492.54707379134857" y="8" width="100" height="30" />
       </bpmndi:BPMNShape>
@@ -98,23 +116,16 @@
         <di:waypoint xsi:type="dc:Point" x="533" y="38" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNShape id="EndEvent_0sl0ttw_di" bpmnElement="EndEvent_OrderShipped">
-        <dc:Bounds x="867.5470737913486" y="102" width="36" height="36" />
+        <dc:Bounds x="966" y="102" width="36" height="36" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="851" y="142" width="70" height="12" />
+          <dc:Bounds x="949" y="142" width="70" height="13" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="SequenceFlow_12j6m4a_di" bpmnElement="SequenceFlow_12j6m4a">
         <di:waypoint xsi:type="dc:Point" x="530" y="120" />
         <di:waypoint xsi:type="dc:Point" x="579" y="120" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="554.5" y="99" width="0" height="12" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="SequenceFlow_13f7q4z_di" bpmnElement="SequenceFlow_13f7q4z">
-        <di:waypoint xsi:type="dc:Point" x="679" y="120" />
-        <di:waypoint xsi:type="dc:Point" x="739" y="120" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="709" y="99" width="0" height="12" />
+          <dc:Bounds x="509.5" y="99" width="90" height="12" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNShape id="ReceiveTask_0n6vzra_di" bpmnElement="ReceiveTask_WaitForGoodsShipped">
@@ -128,18 +139,46 @@
         <di:waypoint xsi:type="dc:Point" x="689" y="38" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="SequenceFlow_0e88tbe_di" bpmnElement="SequenceFlow_0e88tbe">
-        <di:waypoint xsi:type="dc:Point" x="775" y="120" />
-        <di:waypoint xsi:type="dc:Point" x="868" y="120" />
+        <di:waypoint xsi:type="dc:Point" x="862" y="120" />
+        <di:waypoint xsi:type="dc:Point" x="966" y="120" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="821.5" y="99" width="0" height="12" />
+          <dc:Bounds x="869" y="99" width="90" height="12" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNShape id="IntermediateCatchEvent_1x7nn5e_di" bpmnElement="IntermediateThrowEvent_10qjrod">
-        <dc:Bounds x="739" y="102" width="36" height="36" />
+        <dc:Bounds x="826" y="102" width="36" height="36" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="721" y="142" width="71" height="12" />
+          <dc:Bounds x="807" y="142" width="73" height="13" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BoundaryEvent_02r00v5_di" bpmnElement="BoundaryEvent_0cqsypf">
+        <dc:Bounds x="612" y="142" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="629.9130808950086" y="181" width="0" height="13" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="CallActivity_0ncme0u_di" bpmnElement="ServiceTask_CallLoanApproval">
+        <dc:Bounds x="430" y="80" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="SequenceFlow_0cc51vv_di" bpmnElement="SequenceFlow_0cc51vv">
+        <di:waypoint xsi:type="dc:Point" x="630" y="178" />
+        <di:waypoint xsi:type="dc:Point" x="630" y="237" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="645" y="201" width="0" height="13" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="CallActivity_10k10dw_di" bpmnElement="Task_1rtjmv6">
+        <dc:Bounds x="580" y="237" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="SequenceFlow_06dz6sd_di" bpmnElement="SequenceFlow_06dz6sd">
+        <di:waypoint xsi:type="dc:Point" x="680" y="277" />
+        <di:waypoint xsi:type="dc:Point" x="753" y="277" />
+        <di:waypoint xsi:type="dc:Point" x="753" y="120" />
+        <di:waypoint xsi:type="dc:Point" x="826" y="120" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="768" y="191.5" width="0" height="13" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </bpmn:definitions>

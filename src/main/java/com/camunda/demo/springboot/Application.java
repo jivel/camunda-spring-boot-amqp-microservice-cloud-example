@@ -17,6 +17,9 @@ import org.camunda.bpm.engine.authorization.Resources;
 import org.camunda.bpm.engine.filter.Filter;
 import org.camunda.bpm.engine.identity.Group;
 import org.camunda.bpm.engine.identity.User;
+import org.camunda.bpm.model.bpmn.Bpmn;
+import org.camunda.bpm.model.bpmn.BpmnModelInstance;
+import org.camunda.bpm.model.bpmn.builder.CallActivityBuilder;
 import org.camunda.bpm.spring.boot.starter.annotation.EnableProcessApplication;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -91,6 +94,17 @@ public class Application {
 
   public static void setCamundaEELicenseKey(ProcessEngine engine) {
     engine.getManagementService().setProperty("camunda-license-key", "xxxx");
+  }
+  
+  private static void init () {
+//	  CallActivityBuilder activityBuilder = new CallActivityBuilder(modelInstance, element)
+	  final BpmnModelInstance myProcess = Bpmn.createExecutableProcess("process-payments")
+		      .startEvent()
+		      .serviceTask()
+		          .name("Process Payment")
+		      .endEvent()
+		      .done();
+	  
   }
 
 }
